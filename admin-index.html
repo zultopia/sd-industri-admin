@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel — SD Industri</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #2E7D32;
+      --green-light: #4CAF50;
+      --green-pale: #E8F5E9;
+      --red: #C62828;
+      --red-light: #FFEBEE;
+      --amber: #F57F17;
+      --amber-light: #FFF8E1;
+      --text: #1a1a1a;
+      --text-muted: #666;
+      --border: #e0e0e0;
+      --bg: #f5f5f5;
+      --white: #fff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+    /* LOGIN */
+    #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%); }
+    .login-card { background: var(--white); border-radius: 16px; padding: 40px; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo .logo-circle { width: 64px; height: 64px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; }
+    .login-logo h1 { font-size: 20px; font-weight: 700; color: var(--green); }
+    .login-logo p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: var(--radius); font-size: 14px; outline: none; transition: border 0.2s; }
+    .form-group input:focus { border-color: var(--green-light); }
+    .btn-login { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
+    .btn-login:hover { background: var(--green-light); }
+    .login-error { background: var(--red-light); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+
+    /* MAIN LAYOUT */
+    #app { display: none; min-height: 100vh; }
+    .sidebar { width: 220px; background: #1B5E20; position: fixed; top: 0; left: 0; height: 100vh; display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-logo { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo .school-name { color: white; font-weight: 700; font-size: 15px; line-height: 1.3; }
+    .sidebar-logo .school-sub { color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; color: rgba(255,255,255,0.75); cursor: pointer; transition: all 0.15s; font-size: 13px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: #A5D6A7; }
+    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .btn-logout { width: 100%; padding: 8px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+    .btn-logout:hover { background: rgba(255,255,255,0.15); color: white; }
+
+    .main-content { margin-left: 220px; padding: 28px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    /* CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+    .stat-icon { font-size: 24px; margin-bottom: 8px; }
+
+    /* TABLE */
+    .table-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .table-header h3 { font-size: 15px; font-weight: 600; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #F9F9F9; padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; font-size: 13px; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--green-pale); }
+    .cell-truncate { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: var(--green-pale); color: var(--green); }
+    .badge-amber { background: var(--amber-light); color: var(--amber); }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-edit { background: var(--amber-light); color: var(--amber); }
+    .btn-edit:hover { background: #FFE082; }
+    .btn-delete { background: var(--red-light); color: var(--red); }
+    .btn-delete:hover { background: #FFCDD2; }
+    .btn-cancel { background: #f5f5f5; color: var(--text); border: 1px solid var(--border); }
+    .btn-cancel:hover { background: #eeeeee; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--white); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { font-size: 17px; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 0 4px; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .field input, .field textarea, .field select { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; font-family: inherit; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--green-light); }
+    .field textarea { resize: vertical; min-height: 90px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 28px; right: 28px; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background: var(--green); color: white; }
+    .toast-error { background: var(--red); color: white; }
+
+    /* LOADING */
+    .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); gap: 10px; font-size: 14px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    .hidden { display: none !important; }
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-circle">🏫</div>
+      <h1>SD Industri</h1>
+      <p>Panel Admin Guru</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="Masukkan username" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Masukkan password" autocomplete="current-password"/>
+    </div>
+    <button class="btn-login" onclick="doLogin()">Masuk</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="school-name">🏫 SD Industri</div>
+      <div class="school-sub">Panel Admin</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('berita')" id="nav-berita">
+        <span class="nav-icon">📰</span> Berita
+      </div>
+      <div class="nav-item" onclick="showPage('jadwal')" id="nav-jadwal">
+        <span class="nav-icon">📅</span> Jadwal
+      </div>
+      <div class="nav-item" onclick="showPage('guru')" id="nav-guru">
+        <span class="nav-icon">👨‍🏫</span> Data Guru
+      </div>
+      <div class="nav-item" onclick="showPage('galeri')" id="nav-galeri">
+        <span class="nav-icon">🖼️</span> Galeri Foto
+      </div>
+      <div class="nav-item" onclick="showPage('agenda')" id="nav-agenda">
+        <span class="nav-icon">🗓️</span> Agenda
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Login sebagai: <strong id="logged-user" style="color:rgba(255,255,255,0.8)"></strong></div>
+      <button class="btn-logout" onclick="doLogout()">⬅ Keluar</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle">Selamat datang di panel admin SD Industri</div>
+        </div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-icon">📰</div><div class="stat-label">Berita</div><div class="stat-value" id="stat-berita">—</div></div>
+        <div class="stat-card"><div class="stat-icon">👨‍🏫</div><div class="stat-label">Guru</div><div class="stat-value" id="stat-guru">—</div></div>
+        <div class="stat-card"><div class="stat-icon">🖼️</div><div class="stat-label">Galeri</div><div class="stat-value" id="stat-galeri">—</div></div>
+        <div class="stat-card"><div class="stat-icon">🗓️</div><div class="stat-label">Agenda</div><div class="stat-value" id="stat-agenda">—</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><h3>📰 Berita Terbaru</h3></div>
+        <div id="dashboard-berita-list"><div class="loading"><div class="spinner"></div>Memuat data...</div></div>
+      </div>
+    </div>
+
+    <!-- BERITA -->
+    <div class="page" id="page-berita">
+      <div class="page-header">
+        <div><div class="page-title">Berita & Pengumuman</div><div class="page-subtitle">Kelola berita dan pengumuman sekolah</div></div>
+        <button class="btn btn-primary" onclick="openModal('berita')">+ Tambah Berita</button>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll"><div id="table-berita"><div class="loading"><div class="spinner"></div>Memuat...</div></div></div>
+      </div>
+    </div>
+
+    <!-- JADWAL -->
+    <div class="page" id="page-jadwal">
+      <div class="page-header">
+        <div><div class="page-title">Jadwal Pelajaran</div><div class="page-subtitle">Atur jadwal kelas dan kegiatan</div></div>
+        <button class="btn btn-primary" onclick="openModal('jadwal')">+ Tambah Jadwal</button>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll"><div id="table-jadwal"><div class="loading"><div class="spinner"></div>Memuat...</div></div></div>
+      </div>
+    </div>
+
+    <!-- GURU -->
+    <div class="page" id="page-guru">
+      <div class="page-header">
+        <div><div class="page-title">Data Guru</div><div class="page-subtitle">Kelola profil tenaga pengajar</div></div>
+        <button class="btn btn-primary" onclick="openModal('guru')">+ Tambah Guru</button>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll"><div id="table-guru"><div class="loading"><div class="spinner"></div>Memuat...</div></div></div>
+      </div>
+    </div>
+
+    <!-- GALERI -->
+    <div class="page" id="page-galeri">
+      <div class="page-header">
+        <div><div class="page-title">Galeri Foto</div><div class="page-subtitle">Kelola dokumentasi kegiatan sekolah</div></div>
+        <button class="btn btn-primary" onclick="openModal('galeri')">+ Tambah Foto</button>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll"><div id="table-galeri"><div class="loading"><div class="spinner"></div>Memuat...</div></div></div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda">
+      <div class="page-header">
+        <div><div class="page-title">Agenda Sekolah</div><div class="page-subtitle">Jadwal kegiatan dan acara mendatang</div></div>
+        <button class="btn btn-primary" onclick="openModal('agenda')">+ Tambah Agenda</button>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll"><div id="table-agenda"><div class="loading"><div class="spinner"></div>Memuat...</div></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Tambah Data</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" id="modal-save" onclick="saveData()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  KONFIGURASI — GANTI URL INI SETELAH DEPLOY APPS SCRIPT
+// ============================================================
+const API_URL = 'GANTI_DENGAN_URL_APPS_SCRIPT_ANDA';
+
+// ============================================================
+//  STATE
+// ============================================================
+let token = localStorage.getItem('sd_token');
+let currentUser = localStorage.getItem('sd_user');
+let currentSheet = '';
+let editingId = null;
+let allData = {};
+
+// ============================================================
+//  INIT
+// ============================================================
+window.onload = () => {
+  if (token) {
+    showApp();
+  }
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+};
+
+// ============================================================
+//  AUTH
+// ============================================================
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+
+  if (!username || !password) {
+    errEl.textContent = 'Username dan password wajib diisi.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.querySelector('.btn-login');
+  btn.textContent = 'Memproses...';
+  btn.disabled = true;
+
+  try {
+    const res = await api({ action: 'login', username, password });
+    if (res.success) {
+      token = res.token;
+      currentUser = username;
+      localStorage.setItem('sd_token', token);
+      localStorage.setItem('sd_user', username);
+      errEl.style.display = 'none';
+      showApp();
+    } else {
+      errEl.textContent = res.message || 'Login gagal.';
+      errEl.style.display = 'block';
+    }
+  } catch {
+    errEl.textContent = 'Tidak dapat terhubung ke server.';
+    errEl.style.display = 'block';
+  }
+
+  btn.textContent = 'Masuk';
+  btn.disabled = false;
+}
+
+function doLogout() {
+  token = null;
+  currentUser = null;
+  localStorage.removeItem('sd_token');
+  localStorage.removeItem('sd_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('logged-user').textContent = currentUser;
+  showPage('dashboard');
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+
+  if (page === 'dashboard') loadDashboard();
+  else loadTable(page);
+}
+
+// ============================================================
+//  DATA LOADING
+// ============================================================
+async function loadDashboard() {
+  const sheets = ['berita', 'guru', 'galeri', 'agenda'];
+  for (const s of sheets) {
+    const data = await fetchSheet(s);
+    allData[s] = data;
+    document.getElementById('stat-' + s).textContent = data.length;
+  }
+
+  const berita = allData.berita.slice(0, 5);
+  const container = document.getElementById('dashboard-berita-list');
+  if (!berita.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📰</div><p>Belum ada berita</p></div>';
+    return;
+  }
+  container.innerHTML = `<table><thead><tr><th>Tanggal</th><th>Judul</th><th>Kategori</th></tr></thead><tbody>
+    ${berita.map(b => `<tr><td>${b.tanggal||'-'}</td><td class="cell-truncate">${b.judul||'-'}</td><td><span class="badge badge-green">${b.kategori||'Umum'}</span></td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function loadTable(sheet) {
+  currentSheet = sheet;
+  const container = document.getElementById('table-' + sheet);
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>Memuat data...</div>';
+
+  const data = await fetchSheet(sheet);
+  allData[sheet] = data;
+
+  if (!data.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><p>Belum ada data. Klik "+ Tambah" untuk mulai.</p></div>';
+    return;
+  }
+
+  container.innerHTML = renderTable(sheet, data);
+}
+
+async function fetchSheet(sheet) {
+  try {
+    const res = await fetch(`${API_URL}?sheet=${sheet}&token=${token}`);
+    const json = await res.json();
+    return json.success ? json.data : [];
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================
+//  TABLE RENDERING
+// ============================================================
+function renderTable(sheet, data) {
+  const configs = {
+    berita: {
+      cols: [
+        { key: 'tanggal', label: 'Tanggal', width: '100px' },
+        { key: 'judul',   label: 'Judul',   truncate: true },
+        { key: 'kategori',label: 'Kategori', badge: true },
+        { key: 'isi',     label: 'Isi',     truncate: true }
+      ]
+    },
+    jadwal: {
+      cols: [
+        { key: 'hari',          label: 'Hari' },
+        { key: 'waktu',         label: 'Waktu' },
+        { key: 'kegiatan',      label: 'Kegiatan', truncate: true },
+        { key: 'kelas',         label: 'Kelas' },
+        { key: 'guru_pengajar', label: 'Guru' }
+      ]
+    },
+    guru: {
+      cols: [
+        { key: 'nama',           label: 'Nama' },
+        { key: 'jabatan',        label: 'Jabatan' },
+        { key: 'mata_pelajaran', label: 'Mata Pelajaran' },
+        { key: 'pendidikan',     label: 'Pendidikan' }
+      ]
+    },
+    galeri: {
+      cols: [
+        { key: 'tanggal',    label: 'Tanggal' },
+        { key: 'judul',      label: 'Judul' },
+        { key: 'keterangan', label: 'Keterangan', truncate: true },
+        { key: 'url_gambar', label: 'URL Gambar', truncate: true }
+      ]
+    },
+    agenda: {
+      cols: [
+        { key: 'tanggal',   label: 'Tanggal' },
+        { key: 'judul',     label: 'Judul' },
+        { key: 'lokasi',    label: 'Lokasi' },
+        { key: 'deskripsi', label: 'Deskripsi', truncate: true }
+      ]
+    }
+  };
+
+  const conf = configs[sheet];
+  const headers = conf.cols.map(c => `<th style="min-width:${c.width||'auto'}">${c.label}</th>`).join('');
+
+  const rows = data.map(row => {
+    const cells = conf.cols.map(c => {
+      const val = row[c.key] || '—';
+      if (c.badge) return `<td><span class="badge badge-green">${val}</span></td>`;
+      if (c.truncate) return `<td><span class="cell-truncate" title="${val}">${val}</span></td>`;
+      return `<td>${val}</td>`;
+    }).join('');
+    return `<tr>
+      ${cells}
+      <td style="white-space:nowrap">
+        <button class="btn btn-edit btn-sm" onclick="openModal('${sheet}', ${row._id})">✏️ Edit</button>
+        <button class="btn btn-delete btn-sm" onclick="confirmDelete('${sheet}', ${row._id})" style="margin-left:6px">🗑️ Hapus</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `<table><thead><tr>${headers}<th>Aksi</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ============================================================
+//  MODAL FORMS
+// ============================================================
+const formConfigs = {
+  berita: {
+    title: 'Berita / Pengumuman',
+    fields: [
+      { key: 'tanggal',  label: 'Tanggal',   type: 'date' },
+      { key: 'judul',    label: 'Judul',     type: 'text', placeholder: 'Judul berita...' },
+      { key: 'kategori', label: 'Kategori',  type: 'select', options: ['Pengumuman','Prestasi','Kegiatan','Berita','Informasi'] },
+      { key: 'isi',      label: 'Isi Berita',type: 'textarea', placeholder: 'Isi berita...' },
+      { key: 'gambar',   label: 'URL Gambar (opsional)', type: 'text', placeholder: 'https://...' }
+    ]
+  },
+  jadwal: {
+    title: 'Jadwal Pelajaran',
+    fields: [
+      { key: 'hari',          label: 'Hari',           type: 'select', options: ['Senin','Selasa','Rabu','Kamis','Jumat'] },
+      { key: 'waktu',         label: 'Waktu',          type: 'text', placeholder: '07:00 - 08:30' },
+      { key: 'kegiatan',      label: 'Mata Pelajaran', type: 'text', placeholder: 'Matematika' },
+      { key: 'kelas',         label: 'Kelas',          type: 'select', options: ['Kelas 1','Kelas 2','Kelas 3','Kelas 4','Kelas 5','Kelas 6'] },
+      { key: 'guru_pengajar', label: 'Guru Pengajar',  type: 'text', placeholder: 'Nama guru...' }
+    ]
+  },
+  guru: {
+    title: 'Data Guru',
+    fields: [
+      { key: 'nama',           label: 'Nama Lengkap',    type: 'text', placeholder: 'Nama guru...' },
+      { key: 'jabatan',        label: 'Jabatan',         type: 'select', options: ['Kepala Sekolah','Guru Kelas','Guru Mata Pelajaran','Tenaga Kependidikan','Staf TU'] },
+      { key: 'mata_pelajaran', label: 'Mata Pelajaran',  type: 'text', placeholder: 'Semua / Matematika / dll' },
+      { key: 'pendidikan',     label: 'Pendidikan Terakhir', type: 'text', placeholder: 'S1 Pendidikan Dasar' },
+      { key: 'nip',            label: 'NIP (opsional)',  type: 'text', placeholder: '-' },
+      { key: 'foto',           label: 'URL Foto (opsional)', type: 'text', placeholder: 'https://...' }
+    ]
+  },
+  galeri: {
+    title: 'Galeri Foto',
+    fields: [
+      { key: 'tanggal',    label: 'Tanggal',    type: 'date' },
+      { key: 'judul',      label: 'Judul Foto', type: 'text', placeholder: 'Nama kegiatan...' },
+      { key: 'url_gambar', label: 'URL Gambar', type: 'text', placeholder: 'https://... (dari ImageKit/CDN)' },
+      { key: 'keterangan', label: 'Keterangan', type: 'textarea', placeholder: 'Keterangan singkat...' }
+    ]
+  },
+  agenda: {
+    title: 'Agenda Sekolah',
+    fields: [
+      { key: 'tanggal',   label: 'Tanggal',     type: 'date' },
+      { key: 'judul',     label: 'Nama Kegiatan', type: 'text', placeholder: 'Nama kegiatan...' },
+      { key: 'lokasi',    label: 'Lokasi',      type: 'text', placeholder: 'Lapangan / Aula / dll' },
+      { key: 'deskripsi', label: 'Deskripsi',   type: 'textarea', placeholder: 'Deskripsi singkat...' }
+    ]
+  }
+};
+
+function openModal(sheet, editId = null) {
+  currentSheet = sheet;
+  editingId = editId;
+  const conf = formConfigs[sheet];
+  const existing = editId ? (allData[sheet] || []).find(r => r._id === editId) : null;
+
+  document.getElementById('modal-title').textContent = (editId ? 'Edit ' : 'Tambah ') + conf.title;
+
+  const body = conf.fields.map(f => {
+    const val = existing ? (existing[f.key] || '') : '';
+    let input = '';
+    if (f.type === 'textarea') {
+      input = `<textarea id="field-${f.key}" placeholder="${f.placeholder||''}">${val}</textarea>`;
+    } else if (f.type === 'select') {
+      const opts = f.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('');
+      input = `<select id="field-${f.key}"><option value="">Pilih...</option>${opts}</select>`;
+    } else {
+      const dateVal = f.type === 'date' && val ? val : val;
+      input = `<input type="${f.type}" id="field-${f.key}" value="${dateVal}" placeholder="${f.placeholder||''}"/>`;
+    }
+    return `<div class="field"><label>${f.label}</label>${input}</div>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('show');
+  editingId = null;
+}
+
+async function saveData() {
+  const conf = formConfigs[currentSheet];
+  const data = {};
+  for (const f of conf.fields) {
+    const el = document.getElementById('field-' + f.key);
+    if (el) data[f.key] = el.value;
+  }
+
+  const btn = document.getElementById('modal-save');
+  btn.textContent = 'Menyimpan...';
+  btn.disabled = true;
+
+  try {
+    const payload = editingId
+      ? { action: 'update', sheet: currentSheet, id: editingId, data, token }
+      : { action: 'add',    sheet: currentSheet, data, token };
+
+    const res = await api(payload);
+    if (res.success) {
+      closeModal();
+      showToast('✅ ' + (res.message || 'Data berhasil disimpan'), 'success');
+      loadTable(currentSheet);
+    } else {
+      showToast('❌ ' + (res.message || 'Gagal menyimpan'), 'error');
+    }
+  } catch {
+    showToast('❌ Tidak dapat terhubung ke server', 'error');
+  }
+
+  btn.textContent = 'Simpan';
+  btn.disabled = false;
+}
+
+async function confirmDelete(sheet, id) {
+  if (!confirm('Yakin ingin menghapus data ini? Tindakan ini tidak bisa dibatalkan.')) return;
+
+  try {
+    const res = await api({ action: 'delete', sheet, id, token });
+    if (res.success) {
+      showToast('🗑️ Data berhasil dihapus', 'success');
+      loadTable(sheet);
+    } else {
+      showToast('❌ Gagal menghapus data', 'error');
+    }
+  } catch {
+    showToast('❌ Tidak dapat terhubung ke server', 'error');
+  }
+}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+async function api(payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
