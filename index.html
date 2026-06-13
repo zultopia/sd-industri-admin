@@ -419,10 +419,13 @@ async function loadTable(sheet) {
 
 async function fetchSheet(sheet) {
   try {
-    const res = await fetch(`${API_URL}?sheet=${sheet}&token=${token}`);
-    const json = await res.json();
+    const params = new URLSearchParams({ action: 'get', sheet, token });
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const text = await res.text();
+    const json = JSON.parse(text);
     return json.success ? json.data : [];
-  } catch {
+  } catch(e) {
+    console.error('fetchSheet error:', e);
     return [];
   }
 }
@@ -635,15 +638,22 @@ async function confirmDelete(sheet, id) {
 }
 
 // ============================================================
-//  HELPERS
+//  HELPERS — pakai GET untuk hindari CORS preflight
 // ============================================================
 async function api(payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+  const { action, sheet, data, id, username, password, token: tok } = payload;
+  const params = new URLSearchParams({ action });
+  if (sheet)    params.set('sheet', sheet);
+  if (username) params.set('username', username);
+  if (password) params.set('password', password);
+  if (tok)      params.set('token', tok);
+  if (id !== undefined) params.set('id', id);
+  if (data)     params.set('data', encodeURIComponent(JSON.stringify(data)));
+
+  const res = await fetch(`${API_URL}?${params.toString()}`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { return { success: false, message: 'Response tidak valid: ' + text.slice(0,100) }; }
 }
 
 function showToast(msg, type = 'success') {
